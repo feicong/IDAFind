@@ -3,24 +3,62 @@ import threading
 import time
 import urllib.request
 
+import idaapi
 import ida_hexrays
 import ida_kernwin
 import ida_lines
 import ida_moves
 import ida_netnode
-from PyQt5.QtCore import QEvent, QObject, Qt
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import (
-    QApplication,
-    QCheckBox,
-    QColorDialog,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+
+# Qt imports with compatibility for both PyQt5 and PySide6, depending on IDA version
+if idaapi.IDA_SDK_VERSION >= 920:
+    from PySide6.QtCore import QEvent, QObject, Qt
+    from PySide6.QtGui import QColor
+    from PySide6.QtWidgets import (
+        QApplication,
+        QCheckBox,
+        QColorDialog,
+        QHBoxLayout,
+        QLabel,
+        QLineEdit,
+        QPushButton,
+        QVBoxLayout,
+        QWidget,
+    )
+
+    QT_BINDING = "PySide6"
+    EVENT_KEY_PRESS = QEvent.Type.KeyPress
+    EVENT_ACTIVATION_CHANGE = QEvent.Type.ActivationChange
+    KEY_ESCAPE = Qt.Key.Key_Escape
+    KEY_RETURN = Qt.Key.Key_Return
+    KEY_ENTER = Qt.Key.Key_Enter
+    CONTROL_MODIFIER = Qt.KeyboardModifier.ControlModifier
+    WINDOW_FLAGS = Qt.WindowType.Tool | Qt.WindowType.WindowStaysOnTopHint
+    FOCUS_STRONG = Qt.FocusPolicy.StrongFocus
+else:
+    from PyQt5.QtCore import QEvent, QObject, Qt
+    from PyQt5.QtGui import QColor
+    from PyQt5.QtWidgets import (
+        QApplication,
+        QCheckBox,
+        QColorDialog,
+        QHBoxLayout,
+        QLabel,
+        QLineEdit,
+        QPushButton,
+        QVBoxLayout,
+        QWidget,
+    )
+
+    QT_BINDING = "PyQt5"
+    EVENT_KEY_PRESS = QEvent.KeyPress
+    EVENT_ACTIVATION_CHANGE = QEvent.ActivationChange
+    KEY_ESCAPE = Qt.Key_Escape
+    KEY_RETURN = Qt.Key_Return
+    KEY_ENTER = Qt.Key_Enter
+    CONTROL_MODIFIER = Qt.ControlModifier
+    WINDOW_FLAGS = Qt.Tool | Qt.WindowStaysOnTopHint
+    FOCUS_STRONG = Qt.StrongFocus
 
 # Plugin constants
 PLUGIN_NAME = "IdaFind"
@@ -525,7 +563,7 @@ class EscapeEventFilter(QObject):
         self.dialog = dialog
 
     def eventFilter(self, obj, event):
-        if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Escape:
+        if event.type() == EVENT_KEY_PRESS and event.key() == KEY_ESCAPE:
             if self.dialog is not None and self.dialog.isVisible():
                 plugin_debug("Escape intercepted by event filter, closing dialog.")
                 self.dialog.close()
@@ -537,7 +575,7 @@ class SearchLineEdit(QLineEdit):
     """QLineEdit that forwards Enter to parent widget."""
 
     def keyPressEvent(self, event):
-        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+        if event.key() in (KEY_RETURN, KEY_ENTER):
             # Forward to parent widget
             self.parent().keyPressEvent(event)
         else:
@@ -565,7 +603,7 @@ class SearchDialog(QWidget):
 
         self.setWindowTitle("pseudocode search")
         # Tool window: stays on top, doesn't block focus, no taskbar entry
-        self.setWindowFlags(Qt.Tool | Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(WINDOW_FLAGS)
         self.setMinimumWidth(400)
 
         # Widget layout
@@ -588,7 +626,7 @@ class SearchDialog(QWidget):
         self.input = SearchLineEdit(self)
         self.input.setPlaceholderText("Enter search query...")
         self.input.textChanged.connect(self.on_text_changed)
-        self.input.setFocusPolicy(Qt.StrongFocus)
+        self.input.setFocusPolicy(FOCUS_STRONG)
         layout.addWidget(self.input)
 
         # Immediate search
@@ -656,6 +694,19 @@ class SearchDialog(QWidget):
             update_link = QLabel(f'<a href="{PLUGIN_REPO_URL}">{PLUGIN_REPO_URL}</a>')
             update_link.setOpenExternalLinks(True)
             layout.addWidget(update_link)
+
+        nav_row = QHBoxLayout()
+        nav_row.addStretch()
+
+        self.prev_btn = QPushButton("Prev")
+        self.prev_btn.clicked.connect(self.find_prev)
+        nav_row.addWidget(self.prev_btn)
+
+        self.next_btn = QPushButton("Next")
+        self.next_btn.clicked.connect(self.find_next)
+        nav_row.addWidget(self.next_btn)
+
+        layout.addLayout(nav_row)
 
         self.setLayout(layout)
 
@@ -916,10 +967,10 @@ class SearchDialog(QWidget):
 
     def keyPressEvent(self, event):
         """Handle Enter/Ctrl+Enter/Escape."""
-        if event.key() == Qt.Key_Escape:
+        if event.key() == KEY_ESCAPE:
             self.close()
-        elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
-            if event.modifiers() & Qt.ControlModifier:
+        elif event.key() in (KEY_RETURN, KEY_ENTER):
+            if event.modifiers() & CONTROL_MODIFIER:
                 self.find_prev()
             else:
                 self.find_next()
@@ -942,7 +993,7 @@ class SearchDialog(QWidget):
         - If it isn't, and the user asks for it through configuration, makes windows opaque.
         """
         super().changeEvent(event)
-        if event.type() == QEvent.ActivationChange:
+        if event.type() == EVENT_ACTIVATION_CHANGE:
             if self.isActiveWindow():
                 self.setWindowOpacity(1.0)
             else:
