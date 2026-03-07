@@ -1,0 +1,33 @@
+{
+  "IDAMetadataDescriptorVersion": 1,
+  "plugin": {
+    "name": "IDAFind",
+    "version": "1.1.0",
+    "entryPoint": "IDAFind.py",
+    "idaVersions": [
+      "8.3",
+      "9.3"
+    ],
+    "description": "Rich, responsive pseudocode search for Hex-Rays decompiler views",
+    "license": "UNLICENSED",
+    "categories": [
+      "decompilation"
+    ],
+    "urls": {
+      "repository": "https://github.com/cristeigabriela/IDAFind"
+    },
+    "authors": [
+      {
+        "name": "gabriela",
+        "email": "gabrielac@metalbear.co"
+      }
+    ],
+    "keywords": [
+      "hex-rays",
+      "pseudocode",
+      "search",
+      "highlight",
+      "idafind"
+    ]
+  }
+}
