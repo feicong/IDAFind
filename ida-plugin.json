@@ -2,7 +2,7 @@
   "IDAMetadataDescriptorVersion": 1,
   "plugin": {
     "name": "IDAFind",
-    "version": "1.0.2",
+    "version": "1.1.0",
     "entryPoint": "IDAFind.py",
     "idaVersions": [
       "8.3",

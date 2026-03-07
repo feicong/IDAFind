@@ -62,7 +62,7 @@ else:
 
 # Plugin constants
 PLUGIN_NAME = "IdaFind"
-PLUGIN_VERSION = "1.0.1"
+PLUGIN_VERSION = "1.1.0"
 PLUGIN_DEBUG = False  # Prints some debug stuff. Not useful for usage.
 
 # Plugin constants (Repository)
